@@ -757,7 +757,7 @@ for i in tabla_solidworks_ord:
 
 #Trazar la gráfica
 fig = plt.figure(figsize =(8,15)) #8,15
-ax = axes3d.Axes3D(fig)
+ax = plt.axes(projection='3d')#ax = axes3d.Axes3D(fig)
 
 ax.plot(coord1_x1, coord1_z1, coord2_y1,'blue')
 ax.scatter3D(coord1_x1, coord1_z1, coord2_y1, c = "blue")
