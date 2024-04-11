@@ -80,12 +80,82 @@ def ord_burbuja(arreglo):
   return arreglo_ord #Ordenamiento burbuja, ordena en ascendente los pares del arreglo basado en el segundo elemento de cada par (?)
 
 
-#----------------------------------------------------------------------------------------------------------------------------------------
-#Inicio de codigo
-#----------------------------------------------------------------------------------------------------------------------------------------
+#Funciones para Curva Bezier / Spline:
 
+#Anclaje con extremo de circunferencia para hallar coordenada
+def Punto_extremo(radio, angulo, coord_centro, XoY): #radio del circulo, angulo del punto con respecto al centro,  coordenada de centro del circulo, si se quiere hallar coordenada X o Y
+  if (XoY == 'x'): #Verifica si es correspondiente a eje x
+    coordenada = (radio * math.sin(angulo) + coord_centro) #Ecuación para encontrar coordenada x de punto_extremo para curva de Bezier en circunferencia
+  elif (XoY == 'y'): #Verifica si es correspondiente a eje y
+    coordenada = (radio * math.cos(angulo) + coord_centro) #Ecuación para encontrar coordenada y de punto_extremo para curva de Bezier en circunferencia
+  else: #Caso contrario retorna 0
+    coordenada = 0
+  return coordenada
+
+#Punto de Control de extremo de circunferencia para hallar coordenada, se asume que orientación de resorte es derecha
+def Punto_control(radio, angulo, coord_centro, dist, XoY, UnoDos): #radio del circulo, angulo del punto con respecto al centro,  coordenada de centro del circulo, distancia desde el punto extremo para punto control, si se quiere hallar coordenada X o Y
+  if (XoY == 'x' and UnoDos == 1): #Verifica si es correspondiente a eje x ademas de si es del circulo de ref 1
+    coordenada = (radio*math.sin(angulo) + coord_centro) + dist*math.sin(angulo + math.pi/2)#Ecuación para encontrar coordenada x de punto_control para curva de Bezier en circunferencia
+  elif (XoY =='x' and UnoDos == 2): #Verifica si es correspondiente a eje x ademas de si es del circulo de ref 2
+    coordenada = (radio*math.sin(angulo) + coord_centro) - dist*math.sin(angulo + math.pi/2)#Ecuación para encontrar coordenada x de punto_control para curva de Bezier en circunferencia
+  elif (XoY == 'y'and UnoDos == 1): #Verifica si es correspondiente a eje y ademas de si es del circulo de ref 1
+    coordenada = (radio*math.cos(angulo) + coord_centro) + dist*math.cos(angulo + math.pi/2) #Ecuación para encontrar coordenada y de punto_extremo para curva de Bezier en circunferencia
+  elif (XoY == 'y'and UnoDos == 2): #Verifica si es correspondiente a eje y ademas de si es del circulo de ref. 2
+    coordenada = (radio*math.cos(angulo) + coord_centro) - dist*math.cos(angulo + math.pi/2) #Ecuación para encontrar coordenada y de punto_extremo para curva de Bezier en circunferencia
+  else: #Caso contrario retorna 0
+    coordenada = 0
+  return coordenada
+
+#Variable t para aplicar en ecuación de Curva Bezier / Spline, valores que van de 0 a 1
+def t_spline(A_inst, A_inicio, A_final): #Angulo instantaneo, Angulo de incio, Angulo final
+ t = (A_inst - A_inicio)/(A_final - A_inicio) #calculo de variable t
+ return t
+
+#Funcion para encontrar las coordenadas "x" y "y" instantaneas para definir la curva de Bezier/Spline
+def coordenada_spline(A_inst, A_inicio, A_final, puntos_spline): #Variable t, Coordenada de punto 0 de Bezier, Coordenada de punto 1, Coordenada de punto 2, Coordenada de punto 3
+ t = t_spline(A_inst, A_inicio, A_final) #Se encuentra el valor de la variable t instantaneo
+ coordenada_x = (1-t)**3*puntos_spline[0] + 3*(1-t)**2*t*puntos_spline[1] + 3*(1-t)*t**2*puntos_spline[2] + t**3*puntos_spline[3] #calculo coordenada X para Bezier/Spline
+ coordenada_y = ((1-t)**3*puntos_spline[4] + 3*(1-t)**2*t*puntos_spline[5] + 3*(1-t)*t**2*puntos_spline[6] + t**3*puntos_spline[7])*(-1) #calculo coordenada Y para Bezier/Spline
+ return coordenada_x, coordenada_y
+
+# #  #Variable t para aplicar en ecuación de Curva Bezier / Spline, valores que van de 0 a 1
+# def coordenada_spline_old(t, p0, p1, p2, p3): #Variable t, Coordenada de punto 0 de Bezier, Coordenada de punto 1, Coordenada de punto 2, Coordenada de punto 3
+#  coordenada = (1-t)**3*p0 + 3*(1-t)**2*t*p1 + 3*(1-t)*t**2*p2 + t**3*p3 #calculo coordenada para Bezier/Spline
+#  return coordenada
+
+ #Prueba de función con claves:
+def puntos_spline(**kwargs): #Variable t, Coordenada de punto 0 de Bezier, Coordenada de punto 1, Coordenada de punto 2, Coordenada de punto 3
+ A_inicio = kwargs.get('ang_inicio', 0) #Se definen las variables
+ A_final = kwargs.get('ang_fin',0)
+ Coord_centro_x1 = kwargs.get('centro_x1',0)
+ Coord_centro_y1 = kwargs.get('centro_y1',0)
+ Coord_centro_x2 = kwargs.get('centro_x2',0)
+ Coord_centro_y2 = kwargs.get('centro_y2',0)
+ radio_inicial = kwargs.get('radio_1',0)
+ radio_final = kwargs.get('radio_2',0)
+ dist_control1 = kwargs.get('dist_control1',0)
+ dist_control2 = kwargs.get('dist_control2',0)
+
+ px0 = Punto_extremo(radio_inicial, A_inicio, Coord_centro_x1, 'x') #Anclaje 1 con extremo reducido descentrado, coord x
+ py0 = Punto_extremo(radio_inicial, A_inicio, Coord_centro_y1, 'y') #Anclaje 1 con extremo reducido descentrado, coord y
+
+ px1 = Punto_control(radio_inicial, A_inicio, Coord_centro_x1, dist_control1, 'x', 1) #Control 2 de extremo reducido descentrado, coord x
+ py1 = Punto_control(radio_inicial, A_inicio, Coord_centro_y1, dist_control1, 'y', 1) #Control 2 de extremo reducido descentrado, coord y
+
+ px2 = Punto_control(radio_final, A_final, Coord_centro_x2, dist_control2, 'x', 2) #Control 2 de extremo de circunferencia del cuerpo, coord x
+ py2 = Punto_control(radio_final, A_final, Coord_centro_y2, dist_control2, 'y', 2) #Control 2 de extremo de circunferencia del cuerpo, coord y
+
+ px3 = Punto_extremo(radio_final, A_final, Coord_centro_x2, 'x') #Anclaje 3 con extremo de circunferencia del cuerpo, coord x
+ py3 = Punto_extremo(radio_final, A_final, Coord_centro_y2, 'y') #Anclaje 3 con extremo de circunferencia del cuerpo, coord y
+
+ punto_spline = [px0,px1,px2,px3,py0,py1,py2,py3] #Se devuelven las 8 coordenadas necesarios para definir una curva de Bezier
+
+ return punto_spline
+
+#----------------------------------------------------------------------------------------------------------------------------------------
+#INGRESO DE DATOS
+#----------------------------------------------------------------------------------------------------------------------------------------
 #Ingreso de datos
-
 flag = 0 #flag
 while (flag == 0):  #loop para datos ingresados, si no es conforme se vuelven a ingresar todos los datos
   print("Ingrese medidas en mm")
@@ -121,11 +191,14 @@ while (flag == 0):  #loop para datos ingresados, si no es conforme se vuelven a 
       Luz_1 = -0.1
       print("No valido, ingrese tipo de extremo")
 
-  if (d1 > 0):  #Se definen las vueltas reducidas, si se ingresa Dint=0 se entiende sin vuelta reducida
+  if (d1 > 0):  #Se definen las vueltas reducidas, si se ingresa Dint=0 se entiende sin vuelta reducida ni descentrado
     vred1_str = input("Vueltas reducidas del d1: ")
     vred1 = float(vred1_str)
+    des = input("Descentrado en Extremo 1 (Ingrese 0 si no cuenta con descentrado):")
+    des = float(des)
   else:
     vred1 = 0.0
+    des = 0
 
   Luz_2 = -0.1
   while Luz_2<0:#Loop para verificar que se ingrese un tipo de extremo correcto sin que crashee el codigo
@@ -139,22 +212,30 @@ while (flag == 0):  #loop para datos ingresados, si no es conforme se vuelven a 
       Luz_2 = -0.1
       print("No valido, ingrese tipo de extremo")
 
-  if (d2 > 0): #Se definen las vueltas reducidas, si se ingresa Dint=0 se entiende sin vuelta reducida
+  if (d2 > 0): #Se definen las vueltas reducidas, si se ingresa Dint=0 se entiende sin vuelta reducida ni descentrado
     vred2_str = input("Vueltas reducidas del d2: ")
     vred2 = float(vred2_str)
+    des2 = input("Descentrado en Extremo 2 (Ingrese 0 si no cuenta con descentrado):")
+    des2 = float(des2)
   else:
     vred2 = 0.0
+    des2 = 0
 
   grado_str = input("Grado de resolución (1/2/3...):") #Grado de resolución para la cantidad de puntos a graficar
   grado = float(grado_str)
 
- #Se agrega un verificador de todos los datos ingresados, formato similar a lo usado en el trabajo
+ #Se agrega un verificador de todos los datos ingresados, formato similar a nomenclatura del trabajo
   print(f"""
   Ingreso:
   {d} x {D} x {L} x {N}
   {E1} L={Luz_1}mm c./{vred1} vta.red. a {d1}mm int
   {E2} L={Luz_2}mm c./{vred2} vta.red. a {d2}mm int
   """)
+
+  if (des != 0):
+    print(f"""  Descentrado 1: {des}mm""")
+  if (des2 != 0):
+    print(f"""  Descentrado 2: {des2}mm""")
 
   conforme = "a" #flag, en caso de ingreso de respuesta no valida solo se pide nueva respuesta de conformidad
   while (conforme != "si" and conforme != "no"): #loop para verificar que se verifican los datos ingresados, si no es conforme se vuelven a ingresar todos los datos
@@ -166,27 +247,25 @@ while (flag == 0):  #loop para datos ingresados, si no es conforme se vuelven a 
       conforme = "no" #Se pide nuevamente ingreso de datos por datos no conformes
       print ("Ingrese datos nuevamente")
 
-#----------------------------------------------------------------------------------------------------------------------------------------
-#Calculos
-#----------------------------------------------------------------------------------------------------------------------------------------
+#CALCULO RÁPIDO DE DATOS ÚTILES 
 
 #Obtención de valores útiles para los cálculos internos
-if ((E1=="TASE" or E1 == "TAE") and (E2=="TASE" or E2 == "TAE") ):
-  Lt = L - d #Longitud total, como marca en soliworks
-elif ( ((E1=="TASE" or E1 == "TAE") and (E2=="TCSE" or E2 == "TCE")) or ((E1=="TCSE" or E1=="TCE") and (E2=="TASE" or E2=="TAE"))):
-  Lt = L - 0.5*d #Longitud total, como marca en soliworks
-elif ((E1=="TCSE" or E1 == "TCE") and (E2=="TCSE" or E2 == "TCE")):
+if ((E1=="TASE" or E1 == "TCSE") and (E2=="TASE" or E2 == "TCSE") ):
+  Lt = L - d_alambre #Longitud total, como marca en soliworks
+elif ( ((E1=="TAE" or E1 == "TCE") and (E2=="TASE" or E2 == "TCSE")) or ((E1=="TASE" or E1=="TCSE") and (E2=="TAE" or E2=="TCE"))):
+  Lt = L - 0.5*d_alambre #Longitud total, como marca en soliworks
+elif ((E1=="TAE" or E1 == "TCE") and (E2=="TAE" or E2 == "TCE")):
   Lt = L #Longitud total, como marca en soliworks
 
 Nt = 8 * N #Numero total de vueltas, pasado a octavos
 
 #Longitud de tramos
-L1 = longitud_extremo(E1,Luz_1,d) #1era vuelta (Extremo 1)
-L3 = longitud_extremo(E2,Luz_2,d) #Ultima vuelta (Extremo 2)
+L1 = longitud_extremo(E1,Luz_1,d_alambre) #1era vuelta (Extremo 1)
+L3 = longitud_extremo(E2,Luz_2,d_alambre) #Ultima vuelta (Extremo 2)
 L2 = Lt - L1 - L3        #Longitud del cuerpo
 
 #Diámetro medio
-Dm = D - d    #Diámetro constante
+Dm = D - d_alambre    #Diámetro constante
 
 #A evaluar, numeros sacados del aire:
 #Buscar iterar esto
@@ -203,11 +282,8 @@ n3 = 1 #ultima vuelta otorgamos 1 vuelta entera para el ultimo paso
 
 pi = round(math.pi,5)#define pi como constante
 
-#---------------------------------------------------------------------------------------------------------------------------------------------------------
-#Cálculo DIRECTO del paso ideal del cuerpo del Resorte
-
-#Formulas explicadas en Docs Guía
-
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Cálculo DIRECTO del paso ideal del cuerpo del Resorte (Formulas explicadas en Docs Guía)
 #Numero de vueltas por tramo
 x1 = 1
 x2 = nc1
@@ -253,6 +329,8 @@ print("y_total: ",y_total)
 #---------------------------------------------------------------------------------------------------------------------------
 #Defino mis ecuaciones de tramo, tomando como el paso constante el hallada mediante el método de la secante
 
+#Defino mis ecuaciones de tramo, tomando como el paso constante el hallada mediante el método de la secante
+
 #Numero de vueltas en cada tramo, se cuentan cuantos 1/8 x vuelta hay
 N1 = vueltas_a_octavos(n1) #Primera vuelta
 Nc1 = vueltas_a_octavos(nc1) #paso variable 1
@@ -293,7 +371,6 @@ t_2 = t2_max
 t_Nc2 = tNc2_max
 t_3 = t3_max
 
-
 #--------------------------------------------------------------------------------
 #Vuelvo a definir las ecuaciones, tomando en cuentas las reducciones
 
@@ -301,9 +378,9 @@ t_3 = t3_max
 if (d1 > 0): #Para Extremo 1
   N_vr1 = vueltas_a_octavos(vred1) #vueltas reducidas de E1 a octavos
   t_vr1 = round((math.pi/4)*N_vr1,5) #Ángulo para ese tramo reducido - angulo tope
-  Dm_vr1 = d1 + d #Dm = Dint + d , dm de vuelta reducida
+  Dm_vr1 = d1 + d_alambre #Dm = Dint + d , dm de vuelta reducida
   t_vr_1 = t_vr1 - math.pi #no entiendo (angulo tope menos media vuelta)
-  C1 = (Dm - Dm_vr1) / (2 * t_vr_1) #no entiendo
+  C1 = (Dm - Dm_vr1) / (2 * t_vr_1) #no entiendo / Unidad de variacion de diametro desde regular hasta reducido por cada grado en un extremo
 else:
   N_vr1 = 0
   Dm_vr1 = Dm
@@ -313,7 +390,7 @@ else:
 if (d2 > 0):
   N_vr2 = vueltas_a_octavos(vred2)
   t_vr2 = round(t_3 - (math.pi/4)*N_vr2,5) #Dif de angulo final - angulo del tramo -> angulo tope
-  Dm_vr2 = d2 + d
+  Dm_vr2 = d2 + d_alambre
   t_vr_2 = (math.pi/4)*N_vr2 - math.pi+0.001 #V.red de E2 no podia ser 0.5
   C2 = (Dm - Dm_vr2) / (2 * t_vr_2)
 
@@ -338,33 +415,33 @@ print(nodos_totales)
 #Ecuaciones por tramo, partiendo el eje y en 5 tramos
 ang_t1 = np.linspace(0,t_1,n_1 + 1) #nodos x cada tramo
 ang_t1_2 = [] #se crea lista vacia
-for i in ang_t1: #se itera sobre cada nodo generado y redondea el resultado a 5 dec.
-  truncado = round(i,5)
+for anginst in ang_t1: #se itera sobre cada nodo generado y redondea el resultado a 5 dec.
+  truncado = round(anginst,5)
   ang_t1_2.append(truncado) #se agrega a la lista de nodos
 
 #se repite la creacion de los arrays de nodos redondeados para todos los tramos
 ang_tNc1 = np.linspace(t_1,t_Nc1,n_2 + 1)
 ang_tNc1_2 = []
-for i in ang_tNc1:
-  truncado = round(i,5)
+for anginst in ang_tNc1:
+  truncado = round(anginst,5)
   ang_tNc1_2.append(truncado)
 
 ang_t2 = np.linspace(t_Nc1,t_2,n_3 + 1)
 ang_t2_2 = []
-for i in ang_t2:
-  truncado = round(i,5)
+for anginst in ang_t2:
+  truncado = round(anginst,5)
   ang_t2_2.append(truncado)
 
 ang_tNc2 = np.linspace(t_2,t_Nc2,n_4 + 1)
 ang_tNc2_2 = []
-for i in ang_tNc2:
-  truncado = round(i,5)
+for anginst in ang_tNc2:
+  truncado = round(anginst,5)
   ang_tNc2_2.append(truncado)
 
 ang_t3 = np.linspace(t_Nc2,t_3,n_5 + 1)
 ang_t3_2 = []
-for i in ang_t3:
-  truncado = round(i,5)
+for anginst in ang_t3:
+  truncado = round(anginst,5)
   ang_t3_2.append(truncado)
 
 #Lo pasamos a lista estos array, para poder obtener las posiciones de ciertos elementos
@@ -420,8 +497,8 @@ coord2_y = []
 Pi = []
 
 #Tramo 1 #vuelta 0 a vuelta 1 #y = ax^2 + bx
-for a in ang_t1: #itera sobre cada valor en array ang_t1
-  Ni_1 = a/(2*math.pi) #posicion angular de un punto entre 360 para hallar su "posicion en la vuelta"
+for anginst in ang_t1: #itera sobre cada valor en array ang_t1
+  Ni_1 = anginst/(2*math.pi) #posicion angular de un punto entre 360 para hallar su "posicion en la vuelta"
   Pi_1 = 2*(L1-p0)*Ni_1+p0 #Paso basado en posición angular, define trayectoria de la curva a traves del paso
   y_1_decimal = (L1-p0)*pow(Ni_1,2)+p0*Ni_1 #Calcula la coordenada y en formato decimal para el valor actual de Ni_1 utilizando la ecuación y=ax^2+bx
   y_1 = round(y_1_decimal,6) #Redondea el valor de y_1_decimal a 6 decimales y lo asigna a y_1.
@@ -434,12 +511,12 @@ paso1 = Pi[len(Pi)-1] #paso se obtiene leyendo el final ultimo elemento del paso
 
 #Comentarios se repiten
 #Tramo 2 #vuelta 1 a la vuelta donde comienza el paso constante #y = ax2 + bx
-for b in ang_tNc1:
- Ni_2 = (b-ang_t1[len(ang_t1)-1])/(2*math.pi)
+for anginst in ang_tNc1:
+ Ni_2 = (anginst-ang_t1[len(ang_t1)-1])/(2*math.pi)
  Pi_2 = 2*I*Ni_2+paso1
  y_2_decimal = altura1 + I*pow(Ni_2,2)+paso1*Ni_2
  y_2 = round(y_2_decimal,6)
- if (b > ang_tNc1[0]): #se utiliza para no agregar valores en el inicio de la trayectoria
+ if (anginst > ang_tNc1[0]): #se utiliza para no agregar valores en el inicio de la trayectoria
   coord1_y.append(y_2)
   Pi.append(Pi_2)
 
@@ -448,12 +525,12 @@ print("altura2: ", altura2)
 paso2 = Pi[len(Pi)-1]
 
 #Tramo 3 #el tramo donde el paso es constante y = mx + b
-for c in ang_t2:
-  Ni_3 = (c-ang_tNc1[len(ang_tNc1)-1])/(2*math.pi)
+for anginst in ang_t2:
+  Ni_3 = (anginst-ang_tNc1[len(ang_tNc1)-1])/(2*math.pi)
   Pi_3 = paso2
   y_3_decimal = altura2 + paso2*(Ni_3)
   y_3 = round(y_3_decimal,6)
-  if (c > ang_t2[0]):
+  if (anginst > ang_t2[0]):
    coord1_y.append(y_3)
    Pi.append(Pi_3)
 
@@ -464,11 +541,11 @@ paso3 = Pi[len(Pi)-1]
 #Tramo 5 #la vuelta N-1 a vuelta N # y = ax2 + bx
 arreglo_Pi_5_creciente = [] #Se crean arreglos/listas
 arreglo_y_5_decimal_creciente = []
-for e in ang_t3: #iteracion para todos los elementos del arreglo del tramo 3
-  Ni_5 = (e - ang_tNc2[len(ang_tNc2)-1])/(2*math.pi) #"Vuelta" en la que se encuentra en relacion al angulo en el que esta
+for anginst in ang_t3: #iteracion para todos los elementos del arreglo del tramo 3
+  Ni_5 = (anginst - ang_tNc2[len(ang_tNc2)-1])/(2*math.pi) #"Vuelta" en la que se encuentra en relacion al angulo en el que esta
   Pi_5_creciente = 2*(L3-pf)*Ni_5+pf #Valor variable del paso de la curva
   y_5_decimal_creciente = (L3-pf)*pow(Ni_5,2)+pf*Ni_5 #Altura o coord.y del tramo
-  if (e < ang_t3[len(ang_t3)-1]): #Verifica si aun no se llega al final del tramo
+  if (anginst < ang_t3[len(ang_t3)-1]): #Verifica si aun no se llega al final del tramo
     arreglo_y_5_decimal_creciente.append(y_5_decimal_creciente) #Se agregan los valores respectivos a la lista
     arreglo_Pi_5_creciente.append(Pi_5_creciente)
 
@@ -479,11 +556,11 @@ paso5 = arreglo_Pi_5_creciente[len(arreglo_Pi_5_creciente)-1] #Se asigna el ulti
 #paso4_abajo = J*pow(nc2,2)+L3*nc2
 arreglo_Pi_4_creciente = []
 arreglo_y_4_decimal_creciente = []
-for d in ang_tNc2:
-  Ni_4 = (d- ang_t2[len(ang_t2)-1])/(2*math.pi)
+for a in ang_tNc2:
+  Ni_4 = (a- ang_t2[len(ang_t2)-1])/(2*math.pi)
   Pi_4_creciente = 2*J*Ni_4+paso5
   y_4_decimal_creciente = J*pow(Ni_4,2) + (2*L3 - pf) * Ni_4
-  if (d < ang_tNc2[len(ang_tNc2)-1]):
+  if (a < ang_tNc2[len(ang_tNc2)-1]):
     arreglo_y_4_decimal_creciente.append(y_4_decimal_creciente)
     arreglo_Pi_4_creciente.append(Pi_4_creciente)
 
@@ -523,15 +600,57 @@ final = len(coord1_y) #numero de elementos total en la lista de coordenadas y
 altura_final = coord1_y[len(coord1_y)-1] #Se obtiene altura total de la lista general de coordernadas y
 
 #---------------------------------------------------------------------------------------------------------------------------------
-
 #Tramos en base de coordenadas x , z
 
 #Tramo 0.5 (vuelta 0 a vuelta 0.5)
-for a in ang_t0_5:
-  x_1 = (Dm_vr1/2) * math.sin(a) #se hallan las coordenadas para "x" y "z"
-  z_1 = (Dm_vr1/2) * math.cos(a) * (-1)
-  coord1_x1.append(x_1) #Se agregan las coordenadas instanteas a sus respectivas listas
-  coord1_z1.append(z_1)
+
+#des = -30 #Distancia de descentrado de centro de descentrado hasta centro del cuerpo principal
+if (des != 0 ): #Si tiene descentrado
+  #Datos extra para descentrado ----------------
+  C_x = 0 #coordenada Centro X
+  C_y = 0 #coordenada Centro Y
+  A_des = (vueltas_a_octavos(0)*(math.pi/4))  #angulo_de_descentrado con respecto a final del resorte
+  media_vuelta = (vueltas_a_octavos(0.5)*(math.pi/4))
+  #Descentrado empieza desde vuelta reducida (Vred)
+  V_des = vred1 # o Vred2 /Vueltas totales de descentrado respecto a cuerpo principal
+  vdes = vueltas_a_octavos(V_des)*(math.pi/4)
+  #Diametro medio de extremo descentrado
+  Dm_des = d1 + d_alambre # o d2 + d /Diametro interno de reducción + Diam. alambre
+  R_des = Dm_des/2 #Radio de Extremo descentrado
+  #Angulo de transicion entre tramo de cuerpo hasta extremo descentrado (de radio variable)
+  A_trans = ((vueltas_a_octavos(V_des-0.5))*(math.pi/4)) #Ultima media vuelta tiene que ser radio constante
+  #Radio instantaneo durante el tramo de transición de cuerpo hasta extremo descentrado
+  Ri_des = (Dm/2 - R_des)/A_trans #Incremento de radio por pasos mientras varia angulo de transicion, este tramo tiene que empezar cuando empieza reduccion
+  #Coordenadas de centro descentrado  / Coordenada de centro original + descentrado
+  Cd_x = C_x + des*math.sin(A_des) #Coord. desc. x = C_x + dist.Descentrado * angulo_de_descentrado con respecto a final del resorte
+  Cd_y = C_y + des*math.cos(A_des) #Coord. desc. y = C_y + dist.Descentrado * angulo_de_descentrado con respecto a final del resorte
+
+  ang_inicial = media_vuelta
+  ang_final = vdes
+
+  #determinación de angulos de corte para las curvas de descentrado
+  factor = (vred1-0.5)/2 #Cantidad de vueltas total que tiene que ser graficada en curvas variables entre 2
+  if (factor > 0.5): #Limite superior de distancia para splines (despues de media vuelta por spline fallan)
+    ang_a = ang_inicial + media_vuelta*0.99 #N_vueltas - vdes2 + media_vuelta
+    ang_b = ang_final - media_vuelta*0.99 #N_vueltas - media_vuelta - media_vuelta
+  else: #Se trata de que el spline sea el mayor trayecto posible para un mejor resultado gráfico
+    ang_a = ang_inicial +((vueltas_a_octavos(factor))*(math.pi/4))*0.99 #N_vueltas - vdes2 + media_vuelta
+    ang_b = ang_final - ((vueltas_a_octavos(factor))*(math.pi/4))*0.99 #N_vueltas - media_vuelta - media_vuelta
+
+  for anginst in ang_t0_5:
+  #Primer medio semicirculo ----------------
+    x_des = (R_des*math.sin(anginst) + Cd_x) #Coordenada de punto x descentrado
+    z_des = (R_des*math.cos(anginst) + Cd_y)*(-1) #Coordenada de punto y descentrado
+    coord1_x1.append(x_des) #Se agregan las coordenadas instanteas a sus respectivas listas
+    coord1_z1.append(z_des)
+else: #Si no tiene descentrado
+  for anginst in ang_t0_5:
+    x_1 = (Dm_vr1/2) * math.sin(anginst) #se hallan las coordenadas para "x" y "z"
+    z_1 = (Dm_vr1/2) * math.cos(anginst) * (-1)
+
+    coord1_x1.append(x_1) #Se agregan las coordenadas instanteas a sus respectivas listas
+    coord1_z1.append(z_1)
+
 ang_f1 = pi #angulo igual a paso instaneo / angulo final 1(?)
 
 posicion1 = list_t1.index(ang_f1) #Se busca en la lista el valor de angulo f1 y se guarda esa posicion
@@ -564,14 +683,79 @@ elif (tramo_2 == 3):
 
 ang_t_red1 = np.linspace(math.pi,t_vr1,dif1) #hasta llegar al final de la vuelta reducida
 print(ang_t_red1)
-for b in ang_t_red1: #se itera cada elemento de la lista de angulos de la reduccion 1
- x_2 = (Dm_vr1/2 + C1 * (b - math.pi)) * math.sin(b) #Se calcula coord. x para cada elemento de ang_t_red1 / tramo 3
- z_2 = (Dm_vr1/2 + C1 * (b - math.pi)) * math.cos(b) * (-1) #Se calcula coord. z para cada elemento de ang_t_red1
- coord1_x2.append(x_2) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
- coord1_z2.append(z_2)
+
+Distcontrol1 = 17  #Distancia de control para spline de media vuelta 1 a cuerpo 1 - inicio (media vuelta 1)
+Distcontrol2 = 15.25 #Distancia de control para spline de media vuelta 1 a cuerpo 1 - fin (inicio cuerpo 1)
+
+if (vred1 <= 1 and des!= 0) : #con reducción de 1 vuelta o menos y descentrado
+  #Curva Bezier
+  #Se encuentran los 4 puntos que definen la spline que conecta el primer semi circulo reducido con el inicio del cuerpo del resorte
+  punto_spline = puntos_spline(ang_inicio = ang_inicial, ang_fin = ang_final,
+                                centro_x1 = Cd_x, centro_y1 = Cd_y, centro_x2 = C_x, centro_y2 = C_y,
+                                radio_1 = R_des, radio_2 = Dm/2,
+                                dist_control1 = Distcontrol1, dist_control2 = Distcontrol2)
+
+  for anginst in ang_t_red1: #se itera cada elemento de la lista de angulos de la reduccion 1
+    x_2, z_2 = coordenada_spline(anginst, ang_inicial, ang_final, punto_spline)
+    coord1_x2.append(x_2) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
+    coord1_z2.append(z_2)
+
+elif (vred1 > 1 and des!= 0) : #con reducción de más de 1 vuelta y descentrado
+  #Curva Bezier
+  ra = (R_des+(ang_a - ang_inicial)*Ri_des)#Radio del punto inicial de la curva de arquimedes
+  cdxa =(Cd_x + (ang_a-ang_inicial)*(C_x - Cd_x)/A_trans)*(1) #Coordenadas del punto inicial de la curva de arquimedes
+  cdya =(Cd_y + (ang_a-ang_inicial)*(C_y - Cd_y)/A_trans)*(1)
+
+  Distcontrol1a = R_des*0.6 #De media vuelta 1 a arquimedes 1 - inicio (media vuelta 1)
+  Distcontrol2a = ra*0.6 #De media vuelta 1 a arquimedes 1 - fin (inicio arquimedes 1)
+  
+  #Se encuentran los 4 puntos que definen la spline que conecta el primer semi circulo reducido con el inicio de la curva de arquimedes 1
+  punto_spline_a = puntos_spline(ang_inicio = ang_inicial, ang_fin = ang_a,
+                                  centro_x1 = Cd_x, centro_y1 = Cd_y, centro_x2 = cdxa, centro_y2 = cdya,
+                                  radio_1 = R_des, radio_2 = ra,
+                                  dist_control1 = Distcontrol1a, dist_control2 = Distcontrol2a)
+
+  rb = (R_des+(ang_b-ang_inicial)*Ri_des)#Radio del punto final de la curva de arquimedes
+  cdxb =(Cd_x + (ang_b-ang_inicial)*(C_x - Cd_x)/A_trans)*(1) #Coordenadas del punto final de la curva de arquimedes
+  cdyb =(Cd_y + (ang_b-ang_inicial)*(C_y - Cd_y)/A_trans)*(1)
+
+  Distcontrol1b = rb*0.65 #Distancia de control para spline de arquimedes 1 a cuerpo 1 - inicio (fin arquimedes 1)
+  Distcontrol2b = Dm/2*0.65 #Distancia de control para spline de arquimedes 1 a cuerpo 1 - fin (inicio cuerpo 1)
+  
+  #Se encuentran los 4 puntos que definen la spline que conecta el fin de la curva de arquimedes con el inicio del cuerpo del resorte
+  punto_spline_b = puntos_spline(ang_inicio = ang_b, ang_fin = ang_final,
+                                  centro_x1 = cdxb, centro_y1 = cdyb, centro_x2 = C_x, centro_y2 = C_y,
+                                  radio_1 = rb, radio_2 = Dm/2,
+                                  dist_control1 = Distcontrol1b, dist_control2 = Distcontrol2b)
+
+  for anginst in ang_t_red1: #se itera cada elemento de la lista de angulos de la reduccion 1
+
+    if (anginst <= ang_a): #Primer tramo spline
+      x_2, z_2 = coordenada_spline(anginst, ang_inicial, ang_a, punto_spline_a)
+      coord1_x2.append(x_2) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
+      coord1_z2.append(z_2)
+
+    elif (anginst > ang_b): #Segundo tramo spline
+      x_2, z_2 = coordenada_spline(anginst, ang_b, ang_final, punto_spline_b)
+      coord1_x2.append(x_2) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
+      coord1_z2.append(z_2)
+    else: #Tramo arquimedes
+      Cdi_x = Cd_x + (anginst-ang_inicial)*(C_x - Cd_x)/A_trans #Incremento de radio por pasos mientras varia angulo de transicion, este tramo tiene que empezar cuando empieza reduccion
+      Cdi_y = Cd_y + (anginst-ang_inicial)*(C_y - Cd_y)/A_trans #Incremento de radio por pasos mientras varia angulo de transicion, este tramo tiene que empezar cuando empieza reduccion
+      x_2 = (R_des+(anginst-ang_inicial)*Ri_des)*math.sin(anginst) + Cdi_x #Coordenada de punto x descentrado
+      z_2 = ((R_des+(anginst-ang_inicial)*Ri_des)*math.cos(anginst) + Cdi_y)*(-1) #Coordenada de punto y descentrado
+
+      coord1_x2.append(x_2) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
+      coord1_z2.append(z_2)
+
+else: #Sin descentrado
+  for anginst in ang_t_red1: #se itera cada elemento de la lista de angulos de la reduccion 1
+    x_2 = (Dm_vr1/2 + C1 * (anginst - math.pi)) * math.sin(anginst) #Se calcula coord. x para cada elemento de ang_t_red1 / tramo 3
+    z_2 = (Dm_vr1/2 + C1 * (anginst - math.pi)) * math.cos(anginst) * (-1) #Se calcula coord. z para cada elemento de ang_t_red1
+    coord1_x2.append(x_2) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
+    coord1_z2.append(z_2)
 
 #-------------------------------------------------------------------------------------------------------------------------------------
-
 #Tramo cuerpo sin reducciones
 tramo3 = ubicar_tramo(t_vr2,0,t_1,t_Nc1,t_2,t_Nc2,t_3) #Se ubica el tramo al que pertenece t_vr2
 
@@ -598,15 +782,13 @@ elif (tramo3 == 5):
  dif2 = hasta3 - inicio
 
 ang_t_red2 = np.linspace(t_vr1,t_vr2,dif2)
-for a in ang_t_red2: #se itera cada elemento de la lista de angulos de la reduccion 2
-  x_3 = (Dm/2) * math.sin(a) #coordenadas "x" y "z" para tramo 3
-  z_3 = (Dm/2) * math.cos(a) * (-1)
+for anginst in ang_t_red2: #se itera cada elemento de la lista de angulos de la reduccion 2
+  x_3 = (Dm/2) * math.sin(anginst) #coordenadas "x" y "z" para tramo 3
+  z_3 = (Dm/2) * math.cos(anginst) * (-1)
   coord1_x3.append(x_3) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
   coord1_z3.append(z_3)
 
-
 #-------------------------------------------------------------------------------------------------------------------------------------
-
 #Tramo red2 a tramo N - 0.5
 tramo4 = ubicar_tramo(medio_final,0,t_1,t_Nc1,t_2,t_Nc2,t_3)
 
@@ -618,20 +800,125 @@ coord2_y4 = coord1_y[inicio2:hasta4]
 dif3 = hasta4 - inicio2
 
 ang_t_red3 = np.linspace(t_vr2,medio_final,dif3)
-for a in ang_t_red3: #se itera para todo ang_t_red3
-  x_4 = (Dm/2 - C2 * (a - t_vr2)) * math.sin(a)
-  z_4 = (Dm/2 - C2 * (a - t_vr2)) * math.cos(a) * (-1)
-  coord1_x4.append(x_4)
-  coord1_z4.append(z_4)
+
+#des2 = -30
+if (des2 != 0):
+  #Datos opcionales de descentrado
+  C2_x = 0
+  C2_y = 0
+  A2_des = 0 #math.pi/2
+  V2_des = vred2
+  vdes2 = vueltas_a_octavos(V2_des)*(math.pi/4)
+  Dm2_des = d2 + d_alambre
+  R2_des = Dm2_des/2
+  A2_trans = ((vueltas_a_octavos(V2_des - 0.5))*(math.pi/4))
+  N_vueltas = ((vueltas_a_octavos(N))*(math.pi/4))
+  Ri2_des = (-Dm/2 + R2_des)/A2_trans
+
+  Cd2_x = C2_x + des2*math.sin(A2_des) #Coord. desc. x = C_x + dist.Descentrado * angulo_de_descentrado con respecto a final del resorte
+  Cd2_y = C2_y + des2*math.cos(A2_des) #Coord. desc. y = C_y + dist.Descentrado * angulo_de_descentrado con respecto a final del resorte
+  ang_inicial = ((vueltas_a_octavos(N-V2_des))*(math.pi/4))
+  ang_final = ((vueltas_a_octavos(N-0.5))*(math.pi/4))
+
+  #determinación de angulos de corte para las curvas de descentrado
+  factor = (vred2-0.5)/2 #Cantidad de vueltas totales que tienen que ser graficadas en curvas variables entre 2
+  if (factor > 0.5): #Limite superior de distancia para splines (despues de media vuelta por spline fallan)
+    ang_a = ang_inicial + media_vuelta*0.99 #N_vueltas - vdes2 + media_vuelta
+    ang_b = ang_final - media_vuelta*0.99 #N_vueltas - media_vuelta - media_vuelta
+  else: #Se trata de que el spline sea el mayor trayecto posible para un mejor resultado gráfico
+    ang_a = ang_inicial + ((vueltas_a_octavos(factor))*(math.pi/4))*0.99 #N_vueltas - vdes2 + factor
+    ang_b = ang_final - ((vueltas_a_octavos(factor))*(math.pi/4))*0.99 #N_vueltas - media_vuelta - factor
+
+  if (vred2 <= 1) : #con reducción de 1 vuelta o menos y descentrado
+  #Curva Bezier
+    Distcontrol1 = Dm/2*0.8 #Distancia de control para spline de cuerpo 2 a media vuelta 2 - inicio (fin cuerpo 2)
+    Distcontrol2 = R2_des*1.6 #Distancia de control para spline de cuerpo 2 a media vuelta 2 - fin (media vuelta 2)
+    
+    #Se encuentran los 4 puntos que definen la spline que conecta el fin del cuerpo con el ultimo semi circulo reducido
+    punto_spline = puntos_spline(ang_inicio = ang_inicial, ang_fin = ang_final,
+                                  centro_x1 = C2_x, centro_y1 = C2_y, centro_x2 = Cd2_x, centro_y2 = Cd2_y,
+                                  radio_1 = Dm/2, radio_2 = R2_des,
+                                  dist_control1 =  Distcontrol1, dist_control2 = Distcontrol2)
+
+    for anginst in ang_t_red3: #se itera cada elemento de la lista de angulos de la reduccion 1
+
+      x_4, z_4 = coordenada_spline(anginst, ang_inicial, ang_final, punto_spline)
+      coord1_x4.append(x_4) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
+      coord1_z4.append(z_4)
+
+  elif (vred2 > 1) : #con reducción de más de 1 vuelta y descentrado
+
+    #Curva Bezier
+    ra = (Dm/2+(ang_a - ang_inicial)*Ri2_des) #Radio del punto inicial de la curva de arquimedes
+    cdxa =(Cd2_x + (ang_a-ang_inicial)*(C2_x - Cd2_x)/A2_trans)*(1) #Coordenadas del punto inicial de la curva de arquimedes
+    cdya =(Cd2_y + (ang_a-ang_inicial)*(C2_y - Cd2_y)/A2_trans)*(1)
+
+    Distcontrol1a = Dm/2*0.9 #Distancia de control para spline de cuerpo 2 a arquimedes 2 - inicio (cuerpo 2)
+    Distcontrol2a = ra*1.5 #Distancia de control para spline de cuerpo 2 a arquimedes 2 - fin (inicio arquimedes 2)
+
+    #Se encuentran los 4 puntos que definen la spline que conecta el fin del cuerpo con la curva de arquimedes 2
+    punto_spline_a = puntos_spline(ang_inicio = ang_inicial, ang_fin = ang_a,
+                                    centro_x1 = C2_x, centro_y1 = C2_y, centro_x2 = cdxa, centro_y2 = cdya,
+                                    radio_1 = Dm/2, radio_2 = ra,
+                                    dist_control1 = Distcontrol1a, dist_control2 = Distcontrol2a)
+
+    #Curva Bezier
+    rb = (Dm/2+(ang_b-ang_inicial)*Ri2_des) #Radio del punto final de la curva de arquimedes
+    cdxb =(Cd2_x + (ang_b-ang_inicial)*(C2_x - Cd2_x)/A2_trans)*(1) #Coordenadas del punto final de la curva de arquimedes
+    cdyb =(Cd2_y + (ang_b-ang_inicial)*(C2_y - Cd2_y)/A2_trans)*(1)
+
+    Distcontrol1b = rb*1.3 #Distancia de control para spline de arquimedes 2 a media vuelta 2 - inicio (fin arquimedes 2)
+    Distcontrol2b = R2_des*1.8 #Distancia de control para spline de arquimedes 2 a media vuelta 2 - fin (media vuelta 2)
+    
+    #Se encuentran los 4 puntos que definen la spline que conecta el fin de la curva de arquimedes 2 con la el último semi circulo reducido
+    punto_spline_b = puntos_spline(ang_inicio = ang_b, ang_fin = ang_final,
+                                    centro_x1 = cdxb, centro_y1 = cdyb, centro_x2 = Cd2_x, centro_y2 = Cd2_y,
+                                    radio_1 = rb, radio_2 = R2_des,
+                                    dist_control1 = Distcontrol1b, dist_control2 = Distcontrol2b)
+
+    for anginst in ang_t_red3:
+
+      if (anginst <= ang_a): #Primer tramo spline
+
+        x_4, z_4 = coordenada_spline(anginst, ang_inicial, ang_a, punto_spline_a) #Se encuentran las coordenadas instantaneas que definen el spline
+        coord1_x4.append(x_4) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
+        coord1_z4.append(z_4)
+
+      elif (anginst > ang_b): #Segundo tramo spline
+        x_4, z_4 = coordenada_spline(anginst, ang_b, ang_final, punto_spline_b) #Se encuentran las coordenadas instantaneas que definen el spline
+        coord1_x4.append(x_4) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
+        coord1_z4.append(z_4)
+
+      else: #Tramo arquimedes
+        Cdi_x = Cd2_x + (anginst - ang_inicial)*(C2_x - Cd2_x)/A2_trans #Incremento de radio por pasos mientras varia angulo de transicion, este tramo tiene que empezar cuando empieza reduccion
+        Cdi_y = Cd2_y + (anginst - ang_inicial)*(C2_y - Cd2_y)/A2_trans #Incremento de radio por pasos mientras varia angulo de transicion, este tramo tiene que empezar cuando empieza reduccion
+        x_4 = (Dm/2+(anginst - ang_inicial)*Ri2_des)*math.sin(anginst) + Cdi_x #Coordenada de punto x descentrado
+        z_4 = ((Dm/2+(anginst - ang_inicial)*Ri2_des)*math.cos(anginst) + Cdi_y)*(-1) #Coordenada de punto y descentrado
+        coord1_x4.append(x_4) #Se agregan las coordenadas "x" y "z" a la lista de coordenadas
+        coord1_z4.append(z_4)
+
+else: #si no tiene descentrado
+  for anginst in ang_t_red3: #se itera para todo ang_t_red3
+     x_4 = (Dm/2 - C2 * (anginst - t_vr2)) * math.sin(anginst)
+     z_4 = (Dm/2 - C2 * (anginst - t_vr2)) * math.cos(anginst) * (-1)
+     coord1_x4.append(x_4)
+     coord1_z4.append(z_4)
 
 #-------------------------------------------------------------------------------------------------------------------------------------
-
 #Tramo N - 0.5 a tramo N
-for a in ang_tN_5: #se itera sobre cada elemento
-  x_5 = (Dm_vr2/2) * math.sin(a) #se hallan coordenadas x z
-  z_5 = (Dm_vr2/2) * math.cos(a) * (-1)
-  coord1_x5.append(x_5) #se agregan a lista
-  coord1_z5.append(z_5)
+if (des2 != 0 ): #Si tiene descentrado
+  for anginst in ang_tN_5:
+    x_5 = (R2_des*math.sin(anginst) + Cd2_x) #Coordenada de punto x descentrado
+    z_5 = (R2_des*math.cos(anginst) + Cd2_y)*(-1) #Coordenada de punto y descentrado
+    coord1_x5.append(x_5) #Se agregan las coordenadas instanteas a sus respectivas listas
+    coord1_z5.append(z_5)
+else: #si no tiene descentrado
+    for anginst in ang_tN_5: #se itera sobre cada elemento
+     x_5 = (Dm_vr2/2) * math.sin(anginst) #se hallan coordenadas x z
+     z_5 = (Dm_vr2/2) * math.cos(anginst) * (-1)
+     coord1_x5.append(x_5) #se agregan a lista
+     coord1_z5.append(z_5)
+
 inicio3 = hasta4 - 1 #rango de anterior - tope(1)
 coord2_y5 = coord1_y[inicio3:final] #se agregan coordenadas
 
@@ -798,12 +1085,10 @@ index_puntos = 0
 for i in tabla_solidworks_ord: #Se itera para imprimir los puntos con los datos necesarios para llenar en la tabla de Helicoide en solidworks en orden
   print("Punto ",index_puntos," : ", "Paso = ",i[0]," / ","Vueltas = ",i[2]," / ","Altura = ",i[1],"/","Diámetro = ",i[3])
   index_puntos = index_puntos +1
-# from re import X
   
 #----------------------------------------------------------------------------------------------------------------------------------------
 #Grafica
 #----------------------------------------------------------------------------------------------------------------------------------------
-
 #Trazar la gráfica
 fig = plt.figure()#figsize =(8,15)) #Se crea figura vacia de tamaño 8x15 (unidad?)
 ax = plt.axes(projection='3d') #Se crea objeto de proyección tridimensional de eje "ax" para la figura con ejes utilizando Matplotlib
@@ -829,8 +1114,6 @@ ax.set_xlabel("X")
 ax.set_ylabel("Y")
 ax.set_zlabel("Altura media (mm)")
 
-ax.view_init(15,40) #se ajusta la vista de la grafica / angulo de elevacion 15 con rotacion de 40º alrededor del eje z
-plt.show() #se muestra la gráfica
 
 #----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -892,3 +1175,6 @@ print("Punto Final: X = ",resorte[len(resorte)-1][0],", Y = ",resorte[len(resort
 #Durante el codigo se usa coord_y como altura (Eje z)   y    coord_z como profundidad (Eje Y)
 
 #Codigo no contempla la grafica del grosor del alambre cuando grafica el resorte, solo la espiral/helicoide
+
+ax.view_init(90,90)#,90) #se ajusta la vista de la grafica / angulo de elevacion 15 con rotacion de 40º alrededor del eje z
+plt.show() #se muestra la gráfica
